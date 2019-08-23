@@ -44,6 +44,7 @@
 									<listOptionValue builtIn="false" value="/usr/include/opencv"/>
 									<listOptionValue builtIn="false" value="/usr/include/opencv2"/>
 								</option>
+								<option id="nvcc.compiler.cpp11option.1467803911" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
 								<inputType id="nvcc.compiler.input.cu.1677638654" superClass="nvcc.compiler.input.cu"/>
 								<inputType id="nvcc.compiler.input.cpp.1192174515" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.395509837" superClass="nvcc.compiler.input.c"/>
@@ -125,6 +126,7 @@
 									<listOptionValue builtIn="false" value="/usr/include/opencv"/>
 									<listOptionValue builtIn="false" value="/usr/include/opencv2"/>
 								</option>
+								<option id="nvcc.compiler.cpp11option.1430263306" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
 								<inputType id="nvcc.compiler.input.cu.1764291960" superClass="nvcc.compiler.input.cu"/>
 								<inputType id="nvcc.compiler.input.cpp.904983178" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.1846805312" superClass="nvcc.compiler.input.c"/>

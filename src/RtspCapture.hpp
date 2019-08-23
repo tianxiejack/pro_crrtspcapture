@@ -17,6 +17,7 @@
 #include "osa_thr.h"
 #include "osa_sem.h"
 
+#define MAX_CHID 4
 typedef struct {
 	bool bTrack;
 	bool bMtd;
@@ -45,43 +46,48 @@ class RtspCapture:public Capture
 public :
 	RtspCapture();
 	~RtspCapture();
-	virtual void init(std::string devname,int width=1920,int height=1080,CaptureFrameCallback callback=NULL);
+	virtual void init(std::string devname,int chId,int width=1920,int height=1080,CaptureFrameCallback callback=NULL);
 	virtual void uninit();
 private:
 	void inittask();
 	void uninittask();
 	void initgstreamerrtsp();
 	void uninitgstreamerrtsp();
-	static void appsink_eos(GstAppSink * appsink, gpointer user_data);
-	static GstFlowReturn new_buffer(GstAppSink *appsink, gpointer user_data);
-	void main_Recv_funcdata();
+	void main_Recv_funcdata(int chid);
 	int MAIN_threadRecvCreate(void);
 	int MAIN_threadRecvDestroy(void);
 	void NV212BGR( unsigned char *imgY, unsigned char *imgDst,int width, int height );
 	static void *mainRecvTsk(void *context)
-		{
-			MAIN_RtspCaptureThrObj  * pObj= (MAIN_RtspCaptureThrObj*) context;
-			if(pObj==NULL)
-				{
-					;
-					return NULL;
-				}
-			RtspCapture *ctxHdl = (RtspCapture *) pObj->pParent;
-			ctxHdl->main_Recv_funcdata();
+	{
+		MAIN_RtspCaptureThrObj  * pObj= (MAIN_RtspCaptureThrObj*) context;
+		if(pObj==NULL)
+			{
+				;
+				return NULL;
+			}
+		RtspCapture *ctxHdl = (RtspCapture *) pObj->pParent;
+		ctxHdl->main_Recv_funcdata(ctxHdl->m_chId);
 
-			return NULL;
-		}
+		return NULL;
+	}
+
+	static void appsink_eos(GstAppSink * appsink, gpointer user_data);
+	static GstFlowReturn new_buffer0(GstAppSink *appsink, gpointer user_data);
+	static GstFlowReturn new_buffer1(GstAppSink *appsink, gpointer user_data);
+	static GstFlowReturn new_buffer2(GstAppSink *appsink, gpointer user_data);
+	static GstFlowReturn new_buffer3(GstAppSink *appsink, gpointer user_data);
+
 private:
 	GstPipeline *gst_pipeline_ = NULL;
 	GMainLoop *main_loop=NULL;
 	CaptureFrameCallback Callback_;
 	MAIN_RtspCaptureThrObj	MainRtspThrObj;
-	static Queue *imagequeue_;
+	static Queue *imagequeue_[MAX_CHID];
 	int width_;
 	int height_;
 	unsigned char *rgbdata;
 	std::string rtspname_;
-
+	int m_chId;
 };
 
 

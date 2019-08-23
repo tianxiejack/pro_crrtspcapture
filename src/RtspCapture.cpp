@@ -3,18 +3,22 @@
 #include "osa_buf_cr.h"
 using namespace cv;
 using namespace std;
-Queue *RtspCapture::imagequeue_=NULL;
 
-RtspCapture::RtspCapture():Callback_(NULL)
+Queue* RtspCapture::imagequeue_[MAX_CHID] = {0};
+
+RtspCapture::RtspCapture():Callback_(NULL),m_chId(88)
 {
 
 }
+
 RtspCapture::~RtspCapture()
 {
 	uninit();
 }
-void RtspCapture::init(std::string devname,int width,int height,CaptureFrameCallback callback)
+
+void RtspCapture::init(std::string devname,int chId,int width,int height,CaptureFrameCallback callback)
 {
+	m_chId = chId;
 	width_=width;
 	height_=height;
 	Callback_=callback;
@@ -23,24 +27,26 @@ void RtspCapture::init(std::string devname,int width,int height,CaptureFrameCall
 	initgstreamerrtsp();
 	MAIN_threadRecvCreate();
 }
+
 void RtspCapture::uninit()
 {
 	MAIN_threadRecvDestroy();
 	uninittask();
 	uninitgstreamerrtsp();
 }
+
 void RtspCapture::inittask()
 {
-	imagequeue_=new Queue(width_,height_);
+	imagequeue_[m_chId]=new Queue(width_,height_);
 	rgbdata=(unsigned char *)malloc(width_*height_*3);
 
 }
 void RtspCapture::uninittask()
 {
-	if(imagequeue_!=NULL)
+	if(imagequeue_[m_chId]!=NULL)
 	{
-		free(imagequeue_);
-		imagequeue_=NULL;
+		free(imagequeue_[m_chId]);
+		imagequeue_[m_chId]=NULL;
 	}
 	if(rgbdata!=NULL)
 	{
@@ -59,20 +65,40 @@ void RtspCapture::uninitgstreamerrtsp()
 }
 void RtspCapture::initgstreamerrtsp()
 {
-
 	gst_init (NULL, NULL);
     main_loop = g_main_loop_new (NULL, FALSE);
     ostringstream launch_stream;
     int w = 1280;
     int h = 1024;
+	
     string launch_string;
-
     string latency_string(" latency=0 !");
     string rtspbegin_string("rtspsrc location=");
     rtspname_=rtspbegin_string+rtspname_+latency_string;
     //rtspdata=(unsigned char *)malloc(w*h*3);
     //rtspdatargb=(unsigned char *)malloc(w*h*3);
-    GstAppSinkCallbacks callbacks = {appsink_eos, NULL,new_buffer};
+
+	GstAppSinkCallbacks callbacks;
+
+	switch(m_chId)
+	{
+		case 0:
+			callbacks = {appsink_eos, NULL,new_buffer0};
+			break;
+		case 1:
+			callbacks = {appsink_eos, NULL,new_buffer1};
+			break;
+		case 2:
+			callbacks = {appsink_eos, NULL,new_buffer2};
+			break;
+		case 3:
+			callbacks = {appsink_eos, NULL,new_buffer3};
+			break;
+
+		default:
+			break;
+	}
+	
     launch_stream
 	//<< "nvcamerasrc ! "
 	//<< "video/x-raw(memory:NVMM), width="<< w <<", height="<< h <<", framerate=30/1 ! "
@@ -83,13 +109,13 @@ void RtspCapture::initgstreamerrtsp()
     << "decodebin ! "
     << "nvvidconv ! "
    // <<"video/x-raw, format=(string)RGB !"
-    << "video/x-raw, format=NV12, width="<< width_ <<", height="<< height_ <<" ! "
+    << "video/x-raw, format=UYVY, width="<< width_ <<", height="<< height_ <<" ! "
   // <<"video/x-raw, format=NV12 !"
    // <<" videoconvert  ! "
 
    // <<"video/x-raw, format=(string)NV12 !"
-    << "appsink name=mysink ";
-
+    << "appsink name=mysink"<<m_chId;
+	
     launch_string = launch_stream.str();
 
     g_print("Using launch string: %s\n", launch_string.c_str());
@@ -104,8 +130,15 @@ void RtspCapture::initgstreamerrtsp()
     }
     if(error) g_error_free(error);
 
+#if 0
     GstElement *appsink_ = gst_bin_get_by_name(GST_BIN(gst_pipeline_), "mysink");
-    gst_app_sink_set_callbacks (GST_APP_SINK(appsink_), &callbacks, NULL, NULL);
+#else
+	char appsinkName[64];
+	sprintf(appsinkName,"mysink%d",m_chId);	
+	GstElement *appsink_ = gst_bin_get_by_name(GST_BIN(gst_pipeline_), appsinkName);
+#endif
+
+ 	gst_app_sink_set_callbacks (GST_APP_SINK(appsink_), &callbacks, NULL, NULL);
 
     gst_element_set_state((GstElement*)gst_pipeline_, GST_STATE_PLAYING);
 
@@ -119,7 +152,6 @@ void RtspCapture::initgstreamerrtsp()
 */
     //g_print("going to exit, decode %d frames in %d seconds \n", frame_count, sleep_count);
 
-
 }
 void RtspCapture::appsink_eos(GstAppSink * appsink, gpointer user_data)
 {
@@ -127,7 +159,7 @@ void RtspCapture::appsink_eos(GstAppSink * appsink, gpointer user_data)
    // eos = 1;
 //    g_main_loop_quit (hpipe->loop);
 }
-GstFlowReturn RtspCapture::new_buffer(GstAppSink *appsink, gpointer user_data)
+GstFlowReturn RtspCapture::new_buffer0(GstAppSink *appsink, gpointer user_data)
 {
     GstSample *sample = NULL;
     cv::Mat show;
@@ -150,32 +182,12 @@ GstFlowReturn RtspCapture::new_buffer(GstAppSink *appsink, gpointer user_data)
         buffer = gst_sample_get_buffer (sample);
         gst_buffer_map (buffer, &map, GST_MAP_READ);
 
-	    bufinfo=(OSA_buf::OSA_BufInfo*)(imagequeue_->getempty(OSA_TIMEOUT_NONE));
+	    bufinfo=(OSA_buf::OSA_BufInfo*)(imagequeue_[0]->getempty(OSA_TIMEOUT_NONE));
 	    if(bufinfo!=NULL)
 	  	{
-
-				memcpy(bufinfo->virtAddr,map.data,map.size);
-
-				imagequeue_->putfull(bufinfo);
+			memcpy(bufinfo->virtAddr,map.data,map.size);
+			imagequeue_[0]->putfull(bufinfo);
 	  	}
-
-
-      //  printf("map.size = %lu\n", map.size);
-        //cv::Mat frame_in(1920, 1080, CV_8UC3);
-       // static unsigned int  pretime1=0;
-       // unsigned int currenttime=OSA_getCurTimeInMsec();
-	//if(currenttime-pretime>50||currenttime-pretime<30)
-		{
-			;
-			//OSA_printf("********lost %d ms %s timeoffset=%d ms**********\n", OSA_getCurTimeInMsec(), __func__,currenttime-pretime1);
-		}
-
-	//pretime1=currenttime;
-
-       // show = Mat(1080, 1920, CV_8UC2, instance->rtspdata);
-	// showrgb = Mat(1080, 1920, CV_8UC3, instance->rtspdatargb);
-      //  cvtColor(show,showrgb,cv::COLOR_YUV2BGR_NV12);
-
 
         gst_buffer_unmap(buffer, &map);
 
@@ -188,6 +200,135 @@ GstFlowReturn RtspCapture::new_buffer(GstAppSink *appsink, gpointer user_data)
 
     return GST_FLOW_OK;
 }
+
+GstFlowReturn RtspCapture::new_buffer1(GstAppSink *appsink, gpointer user_data)
+{
+    GstSample *sample = NULL;
+    cv::Mat show;
+	cv::Mat showrgb;
+    g_signal_emit_by_name (appsink, "pull-sample", &sample,NULL);
+	//VideoLoadData loaddata;
+    OSA_buf::OSA_BufInfo *bufinfo=NULL;
+    if (sample)
+    {
+        GstBuffer *buffer = NULL;
+        GstCaps   *caps   = NULL;
+        GstMapInfo map    = {0};
+
+        caps = gst_sample_get_caps (sample);
+        if (!caps)
+        {
+            printf("could not get snapshot format\n");
+        }
+        gst_caps_get_structure (caps, 0);
+        buffer = gst_sample_get_buffer (sample);
+        gst_buffer_map (buffer, &map, GST_MAP_READ);
+
+	    bufinfo=(OSA_buf::OSA_BufInfo*)(imagequeue_[1]->getempty(OSA_TIMEOUT_NONE));
+	    if(bufinfo!=NULL)
+	  	{
+			memcpy(bufinfo->virtAddr,map.data,map.size);
+			imagequeue_[1]->putfull(bufinfo);
+	  	}
+
+        gst_buffer_unmap(buffer, &map);
+
+        gst_sample_unref (sample);
+    }
+    else
+    {
+        g_print ("could not make snapshot\n");
+    }
+
+    return GST_FLOW_OK;
+}
+
+GstFlowReturn RtspCapture::new_buffer2(GstAppSink *appsink, gpointer user_data)
+{
+    GstSample *sample = NULL;
+    cv::Mat show;
+	cv::Mat showrgb;
+    g_signal_emit_by_name (appsink, "pull-sample", &sample,NULL);
+	//VideoLoadData loaddata;
+    OSA_buf::OSA_BufInfo *bufinfo=NULL;
+    if (sample)
+    {
+        GstBuffer *buffer = NULL;
+        GstCaps   *caps   = NULL;
+        GstMapInfo map    = {0};
+
+        caps = gst_sample_get_caps (sample);
+        if (!caps)
+        {
+            printf("could not get snapshot format\n");
+        }
+        gst_caps_get_structure (caps, 0);
+        buffer = gst_sample_get_buffer (sample);
+        gst_buffer_map (buffer, &map, GST_MAP_READ);
+
+	    bufinfo=(OSA_buf::OSA_BufInfo*)(imagequeue_[2]->getempty(OSA_TIMEOUT_NONE));
+	    if(bufinfo!=NULL)
+	  	{
+			memcpy(bufinfo->virtAddr,map.data,map.size);
+			imagequeue_[2]->putfull(bufinfo);
+	  	}
+
+        gst_buffer_unmap(buffer, &map);
+
+        gst_sample_unref (sample);
+    }
+    else
+    {
+        g_print ("could not make snapshot\n");
+    }
+
+    return GST_FLOW_OK;
+}
+
+GstFlowReturn RtspCapture::new_buffer3(GstAppSink *appsink, gpointer user_data)
+{
+    GstSample *sample = NULL;
+    cv::Mat show;
+	cv::Mat showrgb;
+    g_signal_emit_by_name (appsink, "pull-sample", &sample,NULL);
+	//VideoLoadData loaddata;
+    OSA_buf::OSA_BufInfo *bufinfo=NULL;
+    if (sample)
+    {
+        GstBuffer *buffer = NULL;
+        GstCaps   *caps   = NULL;
+        GstMapInfo map    = {0};
+
+        caps = gst_sample_get_caps (sample);
+        if (!caps)
+        {
+            printf("could not get snapshot format\n");
+        }
+        gst_caps_get_structure (caps, 0);
+        buffer = gst_sample_get_buffer (sample);
+        gst_buffer_map (buffer, &map, GST_MAP_READ);
+
+	    bufinfo=(OSA_buf::OSA_BufInfo*)(imagequeue_[3]->getempty(OSA_TIMEOUT_NONE));
+	    if(bufinfo!=NULL)
+	  	{
+			memcpy(bufinfo->virtAddr,map.data,map.size);
+			imagequeue_[3]->putfull(bufinfo);
+	  	}
+
+        gst_buffer_unmap(buffer, &map);
+
+        gst_sample_unref (sample);
+    }
+    else
+    {
+        g_print ("could not make snapshot\n");
+    }
+
+    return GST_FLOW_OK;
+}
+
+
+
 int RtspCapture::MAIN_threadRecvCreate(void)
 {
 	int iRet = OSA_SOK;
@@ -202,7 +343,6 @@ int RtspCapture::MAIN_threadRecvCreate(void)
 	MainRtspThrObj.pParent = (void*)this;
 
 	iRet = OSA_thrCreate(&MainRtspThrObj.thrHandleProc, mainRecvTsk, 0, 0, &MainRtspThrObj);
-
 
 	return iRet;
 }
@@ -220,7 +360,50 @@ int RtspCapture::MAIN_threadRecvDestroy(void)
 
 	return iRet;
 }
-void RtspCapture::main_Recv_funcdata()
+
+void extractYUYV2Gray(Mat src, Mat dst)
+{
+	int ImgHeight, ImgWidth,ImgStride;
+
+	ImgWidth = src.cols;
+	ImgHeight = src.rows;
+	ImgStride = ImgWidth*2;
+	uint8_t  *  pDst8_t;
+	uint8_t *  pSrc8_t;
+
+	pSrc8_t = (uint8_t*)(src.data);
+	pDst8_t = (uint8_t*)(dst.data);
+//#pragma UNROLL 4
+//#pragma omp parallel for
+	for(int y = 0; y < ImgHeight*ImgWidth; y++)
+	{
+		pDst8_t[y] = pSrc8_t[y*2];
+	}
+}
+
+void extractUYVY2Gray(Mat src, Mat dst)
+{
+	int ImgHeight, ImgWidth,ImgStride;
+
+	ImgWidth = src.cols;
+	ImgHeight = src.rows;
+	ImgStride = ImgWidth*2;
+	uint8_t  *  pDst8_t;
+	uint8_t *  pSrc8_t;
+
+	pSrc8_t = (uint8_t*)(src.data);
+	pDst8_t = (uint8_t*)(dst.data);
+//#pragma UNROLL 4
+//#pragma omp parallel for
+	for(int y = 0; y < ImgHeight*ImgWidth; y++)
+	{
+		pDst8_t[y] = pSrc8_t[y*2+1];
+	}
+}
+
+
+
+void RtspCapture::main_Recv_funcdata(int chid)
 {
 	OSA_printf("+++++++++++++%s: Main Proc Tsk Is Entering...++++++++++++++++++\n",__func__);
 	unsigned char *data=NULL;
@@ -234,16 +417,33 @@ void RtspCapture::main_Recv_funcdata()
 	{
 		//OSA_semWait(&loadsem,OSA_TIMEOUT_FOREVER);
 
-		bufinfo=(OSA_buf::OSA_BufInfo*)imagequeue_->getfull(OSA_TIMEOUT_FOREVER);
+		bufinfo=(OSA_buf::OSA_BufInfo*)imagequeue_[chid]->getfull(OSA_TIMEOUT_FOREVER);
 		unsigned char *data=(unsigned char *)bufinfo->virtAddr;
-		 NV212BGR(data,rgbdata,width_,height_);
-		 imagequeue_->putempty(bufinfo);
+		//NV212BGR(data,rgbdata,width_,height_);
+
+	#if 0
+		Mat src=Mat(height_,width_,CV_8UC2,data);
+		Mat rgb=Mat(height_,width_,CV_8UC1,rgbdata);
+		//extractYUYV2Gray(src, rgb);
+		extractUYVY2Gray(src, rgb);
+
+		if(chid == 1)
+		{
+			imshow("chid1",rgb);
+			cv::waitKey(1);
+		}
+	#endif
+	
+
+	Mat rgb = Mat(height_,width_,CV_8UC2,data);
+
+		
+		 imagequeue_[chid]->putempty(bufinfo);
 		//rtspdatelen=map.size;
-		Mat rgb=Mat(height_,width_,CV_8UC3,rgbdata);
 		if(Callback_!=NULL)
 		{
 			//if(RTSPURL)
-			Callback_(rgb);
+			Callback_(rgb,chid);
 		}
 	}
 }

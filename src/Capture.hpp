@@ -21,12 +21,12 @@
 
 class Capture{
 public:
-	typedef void (*CaptureFrameCallback)(const cv::Mat frame);
+	typedef void (*CaptureFrameCallback)(const cv::Mat frame,const int chId);
 public:
 	Capture(){};
 public:
 	virtual ~Capture() {};
-	virtual void init(std::string devname,int width=1920,int height=1080,CaptureFrameCallback callback=NULL)CAPTURE_PURE_VIRTUAL;
+	virtual void init(std::string devname,int chId,int width=1920,int height=1080,CaptureFrameCallback callback=NULL)CAPTURE_PURE_VIRTUAL;
 	virtual void uninit()CAPTURE_PURE_VIRTUAL;
 
 	//virtual void setparam();
