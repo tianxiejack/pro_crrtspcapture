@@ -44,7 +44,7 @@
 									<listOptionValue builtIn="false" value="/usr/include/opencv"/>
 									<listOptionValue builtIn="false" value="/usr/include/opencv2"/>
 								</option>
-								<option id="nvcc.compiler.cpp11option.1467803911" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
+								<option id="nvcc.compiler.cpp11option.1467803911" name="Enable C++11 support (-std=c++11)" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
 								<inputType id="nvcc.compiler.input.cu.1677638654" superClass="nvcc.compiler.input.cu"/>
 								<inputType id="nvcc.compiler.input.cpp.1192174515" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.395509837" superClass="nvcc.compiler.input.c"/>
@@ -57,9 +57,6 @@
 									<listOptionValue builtIn="false" value="glib-2.0"/>
 									<listOptionValue builtIn="false" value="gstapp-1.0"/>
 									<listOptionValue builtIn="false" value="pthread"/>
-									<listOptionValue builtIn="false" value="opencv_core"/>
-									<listOptionValue builtIn="false" value="opencv_highgui"/>
-									<listOptionValue builtIn="false" value="opencv_imgproc"/>
 								</option>
 								<inputType id="nvcc.linker.input.1608646621" superClass="nvcc.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
@@ -110,7 +107,7 @@
 						<toolChain id="com.nvidia.cuda.ide.toolchain.eight_zero.so.release.856380781" name="CUDA Toolkit 8.0" superClass="com.nvidia.cuda.ide.toolchain.eight_zero.so.release">
 							<targetPlatform archList="all" binaryParser="com.nvidia.cuda.ide.elf;com.nvidia.cuda.ide.macho;com.nvidia.cuda.ide.cubin" id="com.nvidia.cuda.ide.targetPlatform.816791946" isAbstract="false" name="Debug Platform" osList="linux,macosx" superClass="com.nvidia.cuda.ide.targetPlatform"/>
 							<builder buildPath="${workspace_loc:/crrtspcapture}/Release" id="com.nvidia.cuda.ide.builder.192010566" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="CUDA Toolkit 8.0 Builder" superClass="com.nvidia.cuda.ide.builder"/>
-							<tool id="nvcc.compiler.base.1577407920" name="NVCC Compiler" superClass="nvcc.compiler.base">
+							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" id="nvcc.compiler.base.1577407920" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.deviceDebug.535937479" name="Generate device debug information (-G)" superClass="nvcc.compiler.deviceDebug"/>
 								<option id="nvcc.compiler.option.level.1265050049" name="Generate host debug information (-g)" superClass="nvcc.compiler.option.level"/>
 								<option defaultValue="nvcc.compiler.optimization.level.most" id="nvcc.compiler.optimization.level.1933339980" name="Optimization Level" superClass="nvcc.compiler.optimization.level" valueType="enumerated"/>
@@ -126,7 +123,7 @@
 									<listOptionValue builtIn="false" value="/usr/include/opencv"/>
 									<listOptionValue builtIn="false" value="/usr/include/opencv2"/>
 								</option>
-								<option id="nvcc.compiler.cpp11option.1430263306" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
+								<option id="nvcc.compiler.cpp11option.1430263306" name="Enable C++11 support (-std=c++11)" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
 								<inputType id="nvcc.compiler.input.cu.1764291960" superClass="nvcc.compiler.input.cu"/>
 								<inputType id="nvcc.compiler.input.cpp.904983178" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.1846805312" superClass="nvcc.compiler.input.c"/>
@@ -139,9 +136,6 @@
 									<listOptionValue builtIn="false" value="glib-2.0"/>
 									<listOptionValue builtIn="false" value="gstapp-1.0"/>
 									<listOptionValue builtIn="false" value="pthread"/>
-									<listOptionValue builtIn="false" value="opencv_core"/>
-									<listOptionValue builtIn="false" value="opencv_highgui"/>
-									<listOptionValue builtIn="false" value="opencv_imgproc"/>
 								</option>
 								<inputType id="nvcc.linker.input.458360520" superClass="nvcc.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
@@ -191,5 +185,12 @@
 		</scannerConfigBuildInfo>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/crrtspcapture"/>
+		</configuration>
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/crrtspcapture"/>
+		</configuration>
+	</storageModule>
 </cproject>
